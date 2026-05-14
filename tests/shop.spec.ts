@@ -8,17 +8,20 @@ test('D8Flight Shop Page Validations', async ({ page }) => {
   console.log('--- STARTING HEADER & NAVIGATION FLOW ---');
   const clearOverlays = async () => {
     try {
-      const yesBtn = page.locator('button, a').filter({ hasText: /^YES$/i }).or(page.locator('.age-verify-yes')).first();
-      if (await yesBtn.isVisible({ timeout: 10000 })) {
-        console.log('Age verification detected. Clicking YES.');
-        await yesBtn.click({ force: true });
+      const ageYes = page
+        .getByRole('button', { name: 'YES', exact: true })
+        .or(page.getByText('YES', { exact: true }))
+        .or(page.locator('button, a').filter({ hasText: /^YES$/i }))
+        .or(page.locator('.age-verify-yes'))
+        .first();
+      if (await ageYes.isVisible({ timeout: 3000 })) {
+        await ageYes.click({ force: true });
+        console.log('Age verification cleared');
         await page.waitForTimeout(1500);
       }
-    } catch (e) {
-      console.log('Age popup not found or already dismissed.');
-    }try {
-      await page.addStyleTag({ content: 'iframe[title*="chat"], .tawk-min-container { display: none !important; }' });
-      console.log('Chat widget hidden.');
+    } catch (e) {}
+    try {
+      await page.addStyleTag({ content: 'iframe, .tawk-min-container { display: none !important; }' });
     } catch (e) {}
   };
   // 3.1 Open the Products Listing Page
@@ -27,6 +30,7 @@ test('D8Flight Shop Page Validations', async ({ page }) => {
   await clearOverlays();
   // Wait for skeletons to disappear
   for (let i = 0; i < 20; i++) {
+    await clearOverlays();
     const hasProducts = await page.locator('.product-cart-wrap, .MuiCard-root, [class*="MuiCard-root"]').count();
     const hasSkeletons = await page.locator('.MuiSkeleton-root').count();
     if (hasProducts > 0 && hasSkeletons === 0) break;
@@ -40,8 +44,10 @@ test('D8Flight Shop Page Validations', async ({ page }) => {
   await expect(firstProduct.locator('.product-category, .brand, .product-brand, .MuiTypography-caption').first()).toBeVisible();
   await expect(firstProduct.locator('h2 a, .product-title, .MuiTypography-h6, .MuiTypography-root').first()).toBeVisible();
   await expect(firstProduct.locator('.product-price, .price, [class*="price"]').first()).toBeVisible();
+  await clearOverlays();
   await firstProduct.hover();
   await page.waitForTimeout(500);
+  await clearOverlays();
   const viewProdLink = firstProduct.locator('a').filter({ hasText: /View Product|View/i });
   if (await viewProdLink.isVisible()) {
       await expect(viewProdLink.first()).toBeVisible();
@@ -60,6 +66,7 @@ test('D8Flight Shop Page Validations', async ({ page }) => {
     // Find the filter in the sidebar
     const brandBtn = page.locator('.sidebar-widget, .widget-category').getByText(brand.regex).first();
     if (await brandBtn.isVisible()) {
+        await clearOverlays();
         await brandBtn.click({ force: true });
         console.log('Waiting for listing to refresh...');
         await page.waitForLoadState('networkidle');
@@ -91,6 +98,7 @@ test('D8Flight Shop Page Validations', async ({ page }) => {
     await expect(page).toHaveURL(new RegExp(`cat=${cat}`, 'i'), { timeout: 15000 });
     // Wait for product cards to load (bypassing skeletons)
     for (let i = 0; i < 15; i++) {
+      await clearOverlays();
       const hasProducts = await page.locator('.product-cart-wrap, .MuiCard-root').count();
       const hasSkeletons = await page.locator('.MuiSkeleton-root').count();
       if (hasProducts > 0 && hasSkeletons === 0) break;
@@ -126,6 +134,7 @@ test('D8Flight Shop Page Validations', async ({ page }) => {
     console.log('Clicking "Go to page 2"...');
     const page2Btn = pagination.getByText('2', { exact: true }).first();
     if (await page2Btn.isVisible()) {
+        await clearOverlays();
         await page2Btn.click();
         await page.waitForTimeout(2000);
         console.log('Page 2 loaded.');
@@ -134,6 +143,7 @@ test('D8Flight Shop Page Validations', async ({ page }) => {
     console.log('Clicking "Go to next page"...');
     const nextBtn = page.locator('.pagination a.next, button[aria-label*="next"], .fi-rs-angle-double-right, .fi-rs-arrow-small-right').first();
     if (await nextBtn.isVisible()) {
+        await clearOverlays();
         await nextBtn.click();
         await page.waitForTimeout(2000);
         console.log('Verified page 3 loads.');
@@ -142,6 +152,7 @@ test('D8Flight Shop Page Validations', async ({ page }) => {
     console.log('Clicking "Go to page 9"...');
     const page9Btn = page.locator('.pagination').getByText('9', { exact: true }).first();
     if (await page9Btn.isVisible()) {
+        await clearOverlays();
         await page9Btn.click();
         await page.waitForTimeout(2000);
         console.log('Page 9 loaded.');
@@ -150,6 +161,7 @@ test('D8Flight Shop Page Validations', async ({ page }) => {
     console.log('Clicking "Go to previous page"...');
     const prevBtnActive = page.locator('.pagination a.prev, button[aria-label*="previous"], .fi-rs-angle-double-left, .fi-rs-arrow-small-left').first();
     if (await prevBtnActive.isVisible()) {
+        await clearOverlays();
         await prevBtnActive.click();
         await page.waitForTimeout(2000);
         console.log('Returned to previous page.');
@@ -162,7 +174,7 @@ test('D8Flight Shop Page Validations', async ({ page }) => {
   await page.goto('https://d8flight.com/products', { waitUntil: 'load' });
   await clearOverlays();
   console.log('Locating the first product card...');
-  const firstProdCard = page.locator('.product-cart-wrap').first();
+  const firstProdCard = page.locator('.product-cart-wrap, .MuiCard-root, [class*="MuiCard-root"]').first();
   await firstProdCard.waitFor({ state: 'attached', timeout: 15000 });
   console.log('Clicking the "View Product" link/text on the card...');
   // The image or title is often the link

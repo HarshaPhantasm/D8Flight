@@ -7,11 +7,16 @@ test('D8Flight Product Detail & Variant Flow', async ({ page }) => {
   if (!fs.existsSync(ssDir)) fs.mkdirSync(ssDir, { recursive: true });
   const clearOverlays = async () => {
     try {
-      const yesBtn = page.locator('button, a').filter({ hasText: /^YES$/i }).or(page.locator('.age-verify-yes')).first();
-      if (await yesBtn.isVisible({ timeout: 10000 })) {
+      const yesBtn = page
+        .getByRole('button', { name: 'YES', exact: true })
+        .or(page.getByText('YES', { exact: true }))
+        .or(page.locator('button, a').filter({ hasText: /^YES$/i }))
+        .or(page.locator('.age-verify-yes'))
+        .first();
+      if (await yesBtn.isVisible({ timeout: 3000 })) {
         console.log('Age verification detected. Clicking YES.');
         await yesBtn.click({ force: true });
-        await page.waitForTimeout(1000);
+        await page.waitForTimeout(1500);
       }
     } catch (e) {
       console.log('Age verification popup not found.');
@@ -53,6 +58,7 @@ test('D8Flight Product Detail & Variant Flow', async ({ page }) => {
   ];
   for (const flavor of flavors) {
     console.log(`Selecting flavor: ${flavor}`);
+    await clearOverlays();
     await page.evaluate((name) => {
       const buttons = Array.from(document.querySelectorAll('button, a.btn'));
       const btn = buttons.find(b => (b as HTMLElement).innerText.trim().toUpperCase() === name.toUpperCase());
@@ -73,15 +79,19 @@ test('D8Flight Product Detail & Variant Flow', async ({ page }) => {
   await expect(qtyVal).toBeVisible({ timeout: 15000 });
   const upBtn = page.locator('a.qty-up, .qty-up, [class*="qty-up"]').first();
   const downBtn = page.locator('a.qty-down, .qty-down, [class*="qty-down"]').first();
+  await clearOverlays();
   await upBtn.click(); // to 2
   await page.waitForTimeout(800);
+  await clearOverlays();
   await upBtn.click(); // to 3
   await page.waitForTimeout(800);
+  await clearOverlays();
   await downBtn.click(); // to 2
   await page.waitForTimeout(800);
   console.log('Quantity selector interaction completed.');
   console.log('Testing ADD TO CART flow...');
   //4.5 Add Product to Cart from Product Detail Page
+  await clearOverlays();
   await page.locator('button').filter({ hasText: /ADD TO CART/i }).first().click();
   await page.waitForTimeout(3000); 
   // Close the cart drawer if it appears
@@ -103,6 +113,7 @@ test('D8Flight Product Detail & Variant Flow', async ({ page }) => {
   // 4.4 Click a Category Chip on the Product Page
   console.log('Testing categories chips...');
   const d8CatChip = page.locator('a[href*="/products?cat=d8flight"]').first();
+  await clearOverlays();
   await d8CatChip.click();
   await expect(page).toHaveURL(/products\?cat=d8flight/);
   await page.goBack();
@@ -110,6 +121,7 @@ test('D8Flight Product Detail & Variant Flow', async ({ page }) => {
   await clearOverlays();
   const bestSellersChip = page.locator('a[href*="/products?cat=best-sellers"]').first();
   if (await bestSellersChip.isVisible()) {
+      await clearOverlays();
       await bestSellersChip.click();
       await expect(page).toHaveURL(/products\?cat=best-sellers/);
       await page.goBack();
@@ -118,7 +130,9 @@ test('D8Flight Product Detail & Variant Flow', async ({ page }) => {
   }
   // 4.6 Buy Now (Final Step as it navigates away)
   console.log('Testing BUY NOW flow...');
+  await clearOverlays();
   await page.locator('button').filter({ hasText: /GMO CAKE/i }).first().click();
+  await clearOverlays();
   await page.locator('button').filter({ hasText: /BUY NOW/i }).first().click();
   await expect(page).toHaveURL(/shop-checkout/);
   console.log('--- PRODUCT DETAIL FLOW COMPLETED ---');
