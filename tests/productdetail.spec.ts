@@ -7,10 +7,10 @@ test('D8Flight Product Detail & Variant Flow', async ({ page }) => {
   if (!fs.existsSync(ssDir)) fs.mkdirSync(ssDir, { recursive: true });
   const clearOverlays = async () => {
     try {
-      const yesBtn = page.getByRole('button', { name: 'YES', exact: true }).or(page.getByText('YES', { exact: true })).first();
+      const yesBtn = page.locator('button, a').filter({ hasText: /^YES$/i }).or(page.locator('.age-verify-yes')).first();
       if (await yesBtn.isVisible({ timeout: 10000 })) {
         console.log('Age verification detected. Clicking YES.');
-        await yesBtn.click();
+        await yesBtn.click({ force: true });
         await page.waitForTimeout(1000);
       }
     } catch (e) {

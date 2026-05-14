@@ -8,14 +8,12 @@ test('D8Flight Shop Page Validations', async ({ page }) => {
   console.log('--- STARTING HEADER & NAVIGATION FLOW ---');
   const clearOverlays = async () => {
     try {
-      const yesBtn = page
-        .getByRole('button', { name: 'YES', exact: true })
-        .or(page.getByText('YES', { exact: true }))
-        .first();
-      await yesBtn.waitFor({ state: 'visible', timeout: 8000 });
-      console.log('Age verification detected. Clicking YES.');
-      await yesBtn.click();
-      await page.waitForTimeout(1500);
+      const yesBtn = page.locator('button, a').filter({ hasText: /^YES$/i }).or(page.locator('.age-verify-yes')).first();
+      if (await yesBtn.isVisible({ timeout: 10000 })) {
+        console.log('Age verification detected. Clicking YES.');
+        await yesBtn.click({ force: true });
+        await page.waitForTimeout(1500);
+      }
     } catch (e) {
       console.log('Age popup not found or already dismissed.');
     }try {
