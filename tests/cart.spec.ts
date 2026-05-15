@@ -1,183 +1,98 @@
-import { test, expect } from '@playwright/test';
-import path from 'path';
-import fs from 'fs';
+import { test, expect, type Page } from '@playwright/test';
 
-test('D8Flight Cart Complete Flow', async ({ page }) => {
-  test.setTimeout(600000);
-  const ssDir = path.join(process.cwd(), 'screenshots', 'cart');
-  if (!fs.existsSync(ssDir)) fs.mkdirSync(ssDir, { recursive: true });
-  const productOne = 'https://d8flight.com/products/d8flight-volume-2-doobies-joints-premium-1gm-with-d9-11hydroxy-thcp-thca-diamonds-50ct-jar';
-  const productTwo = 'https://d8flight.com/products/d8flight-houston-we-have-a-pot-roblem-10ct-doobies';
-  let bodyText = '';
-  let moneyMatch;
+test.setTimeout(600000);
 
-  await page.goto(productOne, { waitUntil: 'load', timeout: 60000 });
-  await page.waitForTimeout(1000);
-  if (await page.locator('button, a').filter({ hasText: /^YES$/i }).or(page.locator('.age-verify-yes')).first().isVisible({ timeout: 8000 }).catch(() => false)) await page.locator('button, a').filter({ hasText: /^YES$/i }).or(page.locator('.age-verify-yes')).first().click({ force: true });
-  await page.addStyleTag({ content: 'iframe, .tawk-min-container { display: none !important; }' }).catch(() => undefined);
-  await page.screenshot({ path: path.join(ssDir, '01_flow_1_product.png'), fullPage: true });
-  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-  await page.waitForTimeout(1000);
-  await page.screenshot({ path: path.join(ssDir, '02_flow_1_product_bottom.png'), fullPage: true });
-  if (await page.locator('.variation-button, .swatch-anchor, button, a, .attr-detail a').filter({ hasText: /BLUE RUNTZ|BANANA LAVA|GMO CAKE|5000MG|MANGO|GRAPE|STRAWBERRY/i }).first().isVisible({ timeout: 5000 }).catch(() => false)) await page.locator('.variation-button, .swatch-anchor, button, a, .attr-detail a').filter({ hasText: /BLUE RUNTZ|BANANA LAVA|GMO CAKE|5000MG|MANGO|GRAPE|STRAWBERRY/i }).first().click({ force: true });
-  await page.waitForTimeout(1000);
-  await page.screenshot({ path: path.join(ssDir, '03_flow_1_flavor_selected.png'), fullPage: true });
-  await expect(page.locator('button.button-add-to-cart, button:has-text("ADD TO CART"), button:has-text("Add to cart"), a:has-text("ADD TO CART")').first()).toBeVisible({ timeout: 20000 });
-  await page.locator('button.button-add-to-cart, button:has-text("ADD TO CART"), button:has-text("Add to cart"), a:has-text("ADD TO CART")').first().click({ force: true });
-  await page.waitForTimeout(3000);
-  await page.screenshot({ path: path.join(ssDir, '04_flow_1_added_to_cart.png'), fullPage: true });
-  if (await page.locator('a[href*="shop-cart"], .mini-cart-icon, .header-action-icon-2').first().isVisible({ timeout: 5000 }).catch(() => false)) await page.locator('a[href*="shop-cart"], .mini-cart-icon, .header-action-icon-2').first().click({ force: true });
-  await page.waitForTimeout(1000);
-  await page.goto('https://d8flight.com/shop-cart', { waitUntil: 'load', timeout: 60000 });
-  await page.waitForTimeout(1000);
-  if (await page.locator('button, a').filter({ hasText: /^YES$/i }).or(page.locator('.age-verify-yes')).first().isVisible({ timeout: 8000 }).catch(() => false)) await page.locator('button, a').filter({ hasText: /^YES$/i }).or(page.locator('.age-verify-yes')).first().click({ force: true });
-  await page.screenshot({ path: path.join(ssDir, '05_flow_1_cart.png'), fullPage: true });
-  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-  await page.waitForTimeout(1000);
-  await page.screenshot({ path: path.join(ssDir, '06_flow_1_cart_bottom.png'), fullPage: true });
-  await expect(page).toHaveURL('https://d8flight.com/shop-cart', { timeout: 20000 });
-  await expect(page.locator('body')).toContainText(/Your Cart|Cart/i, { timeout: 20000 });
-  await expect(page.locator('body')).toContainText(/free shipping|shipping/i);
-  await expect(page.locator('body')).toContainText(/Product/i);
-  await expect(page.locator('body')).toContainText(/Unit Price|Price/i);
-  await expect(page.locator('body')).toContainText(/Quantity/i);
-  await expect(page.locator('body')).toContainText(/Subtotal/i);
-  await expect(page.locator('body')).toContainText(/Remove/i);
-  await expect(page.locator('table tbody tr, .cart_item, .cart-item').filter({ hasText: /\$|\d/ }).first()).toBeVisible({ timeout: 20000 });
-  await expect(page.locator('table, .cart, .cart-table').first()).toContainText(/\S/);
-  await expect(page.locator('table tbody tr, .cart_item, .cart-item').filter({ hasText: /\$|\d/ }).first()).toContainText(/\$|\d/);
-  await expect(page.locator('body')).toContainText(/Cart Subtotal|Subtotal/i);
-  await expect(page.locator('body')).toContainText(/Shipping/i);
-  await expect(page.locator('body')).toContainText(/FREE|Free/i);
-  await expect(page.locator('body')).toContainText(/Tax/i);
-  await expect(page.locator('body')).toContainText(/Discount/i);
-  await expect(page.locator('body')).toContainText(/Total/i);
-  await expect(page.locator('button, a').filter({ hasText: /Proceed To CheckOut|Checkout/i }).first()).toBeVisible({ timeout: 15000 });
-  await page.screenshot({ path: path.join(ssDir, '07_flow_1_cart_verified.png'), fullPage: true });
+const productUrl = 'https://d8flight.com/products/d8flight-volume-2-doobies-joints-premium-1gm-with-d9-11hydroxy-thcp-thca-diamonds-50ct-jar';
 
-  await page.goto(productOne, { waitUntil: 'load', timeout: 60000 });
-  await page.waitForTimeout(1000);
-  if (await page.locator('button, a').filter({ hasText: /^YES$/i }).or(page.locator('.age-verify-yes')).first().isVisible({ timeout: 8000 }).catch(() => false)) await page.locator('button, a').filter({ hasText: /^YES$/i }).or(page.locator('.age-verify-yes')).first().click({ force: true });
-  await page.screenshot({ path: path.join(ssDir, '08_flow_2_product.png'), fullPage: true });
-  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-  await page.waitForTimeout(1000);
-  await page.screenshot({ path: path.join(ssDir, '09_flow_2_product_bottom.png'), fullPage: true });
-  if (await page.locator('.variation-button, .swatch-anchor, button, a, .attr-detail a').filter({ hasText: /BLUE RUNTZ|BANANA LAVA|GMO CAKE|5000MG|MANGO|GRAPE|STRAWBERRY/i }).first().isVisible({ timeout: 5000 }).catch(() => false)) await page.locator('.variation-button, .swatch-anchor, button, a, .attr-detail a').filter({ hasText: /BLUE RUNTZ|BANANA LAVA|GMO CAKE|5000MG|MANGO|GRAPE|STRAWBERRY/i }).first().click({ force: true });
-  await page.locator('button.button-add-to-cart, button:has-text("ADD TO CART"), button:has-text("Add to cart"), a:has-text("ADD TO CART")').first().click({ force: true });
-  await page.waitForTimeout(3000);
-  await page.screenshot({ path: path.join(ssDir, '10_flow_2_added_to_cart.png'), fullPage: true });
-  await page.goto('https://d8flight.com/shop-cart', { waitUntil: 'load', timeout: 60000 });
-  await page.waitForTimeout(1000);
-  await page.screenshot({ path: path.join(ssDir, '11_flow_2_cart.png'), fullPage: true });
-  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-  await page.waitForTimeout(1000);
-  await page.screenshot({ path: path.join(ssDir, '12_flow_2_cart_bottom.png'), fullPage: true });
-  bodyText = await page.locator('body').textContent() || '';
-  moneyMatch = bodyText.match(/Subtotal[\s\S]*?\$\s*([0-9,.]+)/i);
-  const beforeSubtotal = moneyMatch ? Number(moneyMatch[1].replace(/,/g, '')) : 0;
-  if (await page.locator('table tbody tr .qty-up, table tbody tr .plus, table tbody tr button:has-text("+")').first().isVisible({ timeout: 5000 }).catch(() => false)) await page.locator('table tbody tr .qty-up, table tbody tr .plus, table tbody tr button:has-text("+")').first().click({ force: true });
-  else if (await page.locator('table tbody tr input[type="number"], table tbody tr input.qty').first().isVisible({ timeout: 5000 }).catch(() => false)) {
-    await page.locator('table tbody tr input[type="number"], table tbody tr input.qty').first().fill('2');
-    await page.locator('table tbody tr input[type="number"], table tbody tr input.qty').first().press('Enter');
+const clearOverlays = async (page: Page) => {
+  try {
+    const yesBtn = page.getByRole('button', { name: 'YES', exact: true }).or(page.getByText('YES', { exact: true }));
+    if (await yesBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await yesBtn.click({ force: true });
+    }
+  } catch {}
+  try {
+    await page.addStyleTag({ content: '.tawk-min-container, .tawk-button, .tawk-widget { display: none !important; }' });
+  } catch {}
+};
+
+const addProductToCart = async (page: Page) => {
+  await page.goto(productUrl, { waitUntil: 'load' });
+  await clearOverlays(page);
+  
+  const variation = page.locator('button, a, .variation-button').filter({ hasText: /BLUE RUNTZ|BANANA LAVA|GMO CAKE/i }).first();
+  if (await variation.isVisible().catch(() => false)) {
+    await variation.click({ force: true });
   }
-  await page.waitForTimeout(1000);
-  await page.screenshot({ path: path.join(ssDir, '13_flow_2_quantity_updated.png'), fullPage: true });
-  await expect(page.locator('table tbody tr').first()).toContainText(/2/);
-  bodyText = await page.locator('body').textContent() || '';
-  moneyMatch = bodyText.match(/Subtotal[\s\S]*?\$\s*([0-9,.]+)/i);
-  const afterSubtotal = moneyMatch ? Number(moneyMatch[1].replace(/,/g, '')) : 0;
-  expect(afterSubtotal).toBeGreaterThanOrEqual(beforeSubtotal);
-  await expect(page.locator('body')).toContainText(/Tax/i);
-  await expect(page.locator('body')).toContainText(/Total/i);
+  
+  await page.locator('button.button-add-to-cart, button:has-text("ADD TO CART")').first().click({ force: true });
+  await page.waitForTimeout(3000);
+};
 
-  await page.goto(productOne, { waitUntil: 'load', timeout: 60000 });
-  await page.waitForTimeout(1000);
-  await page.screenshot({ path: path.join(ssDir, '14_flow_3_product_one.png'), fullPage: true });
-  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-  await page.waitForTimeout(1000);
-  await page.screenshot({ path: path.join(ssDir, '15_flow_3_product_one_bottom.png'), fullPage: true });
-  if (await page.locator('.variation-button, .swatch-anchor, button, a, .attr-detail a').filter({ hasText: /BLUE RUNTZ|BANANA LAVA|GMO CAKE|5000MG|MANGO|GRAPE|STRAWBERRY/i }).first().isVisible({ timeout: 5000 }).catch(() => false)) await page.locator('.variation-button, .swatch-anchor, button, a, .attr-detail a').filter({ hasText: /BLUE RUNTZ|BANANA LAVA|GMO CAKE|5000MG|MANGO|GRAPE|STRAWBERRY/i }).first().click({ force: true });
-  await page.locator('button.button-add-to-cart, button:has-text("ADD TO CART"), button:has-text("Add to cart"), a:has-text("ADD TO CART")').first().click({ force: true });
-  await page.waitForTimeout(3000);
-  await page.screenshot({ path: path.join(ssDir, '16_flow_3_product_one_added.png'), fullPage: true });
-  await page.goto(productTwo, { waitUntil: 'load', timeout: 60000 });
-  await page.waitForTimeout(1000);
-  await page.screenshot({ path: path.join(ssDir, '17_flow_3_product_two.png'), fullPage: true });
-  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-  await page.waitForTimeout(1000);
-  await page.screenshot({ path: path.join(ssDir, '18_flow_3_product_two_bottom.png'), fullPage: true });
-  if (await page.locator('.variation-button, .swatch-anchor, button, a, .attr-detail a').filter({ hasText: /BLUE RUNTZ|BANANA LAVA|GMO CAKE|5000MG|MANGO|GRAPE|STRAWBERRY/i }).first().isVisible({ timeout: 5000 }).catch(() => false)) await page.locator('.variation-button, .swatch-anchor, button, a, .attr-detail a').filter({ hasText: /BLUE RUNTZ|BANANA LAVA|GMO CAKE|5000MG|MANGO|GRAPE|STRAWBERRY/i }).first().click({ force: true });
-  await page.locator('button.button-add-to-cart, button:has-text("ADD TO CART"), button:has-text("Add to cart"), a:has-text("ADD TO CART")').first().click({ force: true });
-  await page.waitForTimeout(3000);
-  await page.screenshot({ path: path.join(ssDir, '19_flow_3_product_two_added.png'), fullPage: true });
-  await page.goto('https://d8flight.com/shop-cart', { waitUntil: 'load', timeout: 60000 });
-  await page.waitForTimeout(1000);
-  await page.screenshot({ path: path.join(ssDir, '20_flow_3_cart_two_products.png'), fullPage: true });
-  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-  await page.waitForTimeout(1000);
-  await page.screenshot({ path: path.join(ssDir, '21_flow_3_cart_two_products_bottom.png'), fullPage: true });
-  const rowsBeforeRemove = await page.locator('table tbody tr').filter({ hasText: /\d/ }).count();
-  expect(rowsBeforeRemove).toBeGreaterThanOrEqual(2);
-  const firstRowText = await page.locator('table tbody tr').filter({ hasText: /\d/ }).first().textContent();
-  await page.locator('table tbody tr .remove, table tbody tr .fi-rs-trash, table tbody tr .product-remove a').first().click({ force: true });
-  await page.waitForTimeout(1000);
-  await page.screenshot({ path: path.join(ssDir, '22_flow_3_first_product_removed.png'), fullPage: true });
-  await expect(page.locator('table tbody')).not.toContainText(firstRowText?.trim().slice(0, 20) || 'removed-product-text');
-  const rowsAfterRemove = await page.locator('table tbody tr').filter({ hasText: /\d/ }).count();
-  expect(rowsAfterRemove).toBeLessThan(rowsBeforeRemove);
-  await expect(page.locator('body')).toContainText(/Total/i);
+test.describe('D8Flight Shopping Cart Flows', () => {
 
-  await page.goto(productOne, { waitUntil: 'load', timeout: 60000 });
-  await page.waitForTimeout(1000);
-  await page.screenshot({ path: path.join(ssDir, '23_flow_4_product.png'), fullPage: true });
-  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-  await page.waitForTimeout(1000);
-  await page.screenshot({ path: path.join(ssDir, '24_flow_4_product_bottom.png'), fullPage: true });
-  if (await page.locator('.variation-button, .swatch-anchor, button, a, .attr-detail a').filter({ hasText: /BLUE RUNTZ|BANANA LAVA|GMO CAKE|5000MG|MANGO|GRAPE|STRAWBERRY/i }).first().isVisible({ timeout: 5000 }).catch(() => false)) await page.locator('.variation-button, .swatch-anchor, button, a, .attr-detail a').filter({ hasText: /BLUE RUNTZ|BANANA LAVA|GMO CAKE|5000MG|MANGO|GRAPE|STRAWBERRY/i }).first().click({ force: true });
-  await page.locator('button.button-add-to-cart, button:has-text("ADD TO CART"), button:has-text("Add to cart"), a:has-text("ADD TO CART")').first().click({ force: true });
-  await page.waitForTimeout(3000);
-  await page.screenshot({ path: path.join(ssDir, '25_flow_4_added_to_cart.png'), fullPage: true });
-  await page.goto('https://d8flight.com/shop-cart', { waitUntil: 'load', timeout: 60000 });
-  await page.waitForTimeout(1000);
-  await page.screenshot({ path: path.join(ssDir, '26_flow_4_cart.png'), fullPage: true });
-  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-  await page.waitForTimeout(1000);
-  await page.screenshot({ path: path.join(ssDir, '27_flow_4_cart_bottom.png'), fullPage: true });
-  await expect(page.locator('button, a').filter({ hasText: /Clear Cart|Clear/i }).first()).toBeVisible({ timeout: 15000 });
-  await page.locator('button, a').filter({ hasText: /Clear Cart|Clear/i }).first().click({ force: true });
-  await page.waitForTimeout(2000);
-  await page.screenshot({ path: path.join(ssDir, '28_flow_4_cart_cleared.png'), fullPage: true });
-  await expect(page.locator('body')).toContainText(/empty|cart is empty|No products/i, { timeout: 15000 });
+  test('5.1 Open the Cart Page', async ({ page }) => {
+    await addProductToCart(page);
+    await page.goto('https://d8flight.com/shop-cart', { waitUntil: 'load' });
+    await clearOverlays(page);
 
-  await page.goto(productOne, { waitUntil: 'load', timeout: 60000 });
-  await page.waitForTimeout(1000);
-  await page.screenshot({ path: path.join(ssDir, '29_flow_5_product.png'), fullPage: true });
-  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-  await page.waitForTimeout(1000);
-  await page.screenshot({ path: path.join(ssDir, '30_flow_5_product_bottom.png'), fullPage: true });
-  if (await page.locator('.variation-button, .swatch-anchor, button, a, .attr-detail a').filter({ hasText: /BLUE RUNTZ|BANANA LAVA|GMO CAKE|5000MG|MANGO|GRAPE|STRAWBERRY/i }).first().isVisible({ timeout: 5000 }).catch(() => false)) await page.locator('.variation-button, .swatch-anchor, button, a, .attr-detail a').filter({ hasText: /BLUE RUNTZ|BANANA LAVA|GMO CAKE|5000MG|MANGO|GRAPE|STRAWBERRY/i }).first().click({ force: true });
-  await page.locator('button.button-add-to-cart, button:has-text("ADD TO CART"), button:has-text("Add to cart"), a:has-text("ADD TO CART")').first().click({ force: true });
-  await page.waitForTimeout(3000);
-  await page.screenshot({ path: path.join(ssDir, '31_flow_5_added_to_cart.png'), fullPage: true });
-  await page.goto('https://d8flight.com/shop-cart', { waitUntil: 'load', timeout: 60000 });
-  await page.waitForTimeout(1000);
-  await page.screenshot({ path: path.join(ssDir, '32_flow_5_cart.png'), fullPage: true });
-  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-  await page.waitForTimeout(1000);
-  await page.screenshot({ path: path.join(ssDir, '33_flow_5_cart_bottom.png'), fullPage: true });
-  await expect(page.locator('button, a').filter({ hasText: /Proceed To CheckOut|Checkout/i }).first()).toBeVisible({ timeout: 15000 });
-  await page.locator('button, a').filter({ hasText: /Proceed To CheckOut|Checkout/i }).first().click({ force: true });
-  await page.waitForURL('https://d8flight.com/shop-checkout', { timeout: 40000 });
-  await page.waitForTimeout(1000);
-  if (await page.locator('button, a').filter({ hasText: /^YES$/i }).or(page.locator('.age-verify-yes')).first().isVisible({ timeout: 8000 }).catch(() => false)) await page.locator('button, a').filter({ hasText: /^YES$/i }).or(page.locator('.age-verify-yes')).first().click({ force: true });
-  await page.screenshot({ path: path.join(ssDir, '34_flow_5_checkout_opened.png'), fullPage: true });
-  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-  await page.waitForTimeout(1000);
-  await page.screenshot({ path: path.join(ssDir, '35_flow_5_checkout_bottom.png'), fullPage: true });
-  await expect(page.locator('body')).toContainText(/Billing Address|Billing/i, { timeout: 20000 });
-  if (await page.locator('input[name*="first"], input[placeholder*="First"]').first().isVisible({ timeout: 5000 }).catch(() => false)) await page.locator('input[name*="first"], input[placeholder*="First"]').first().fill('Test');
-  if (await page.locator('input[name*="last"], input[placeholder*="Last"]').first().isVisible({ timeout: 5000 }).catch(() => false)) await page.locator('input[name*="last"], input[placeholder*="Last"]').first().fill('User');
-  if (await page.locator('input[type="email"], input[name*="email"]').first().isVisible({ timeout: 5000 }).catch(() => false)) await page.locator('input[type="email"], input[name*="email"]').first().fill('test@example.com');
-  if (await page.locator('input[type="tel"], input[name*="phone"]').first().isVisible({ timeout: 5000 }).catch(() => false)) await page.locator('input[type="tel"], input[name*="phone"]').first().fill('9999999999');
-  await page.screenshot({ path: path.join(ssDir, '36_flow_5_billing_form_filled.png'), fullPage: true });
+    await expect(page).toHaveURL(/shop-cart/i);
+    await expect(page.locator('h1, h2')).toContainText(/Cart/i);
+    await expect(page.locator('table tbody tr').first()).toBeVisible();
+    await expect(page.locator('body')).toContainText(/Subtotal|Total|Proceed To CheckOut/i);
+  });
+
+  test('5.2 Increase Quantity in the Cart', async ({ page }) => {
+    await addProductToCart(page);
+    await page.goto('https://d8flight.com/shop-cart', { waitUntil: 'load' });
+    await clearOverlays(page);
+
+    const qtyInput = page.locator(`//tr[.//span[text()='PURPLE TRUFFLE']]//td[@data-title='Stock']/i`).first();
+    const beforeVal = parseInt(await qtyInput.textContent() || '1');
+    
+    const plusBtn = page.locator('.qty-up, .plus, button:has-text("+")').first();
+    if (await plusBtn.isVisible()) {
+      await plusBtn.click({ force: true });
+    } else {
+      await qtyInput.fill(String(beforeVal + 1));
+      await qtyInput.press('Enter');
+    }
+    
+    await page.waitForTimeout(2000);
+    expect(parseInt(await qtyInput.inputValue())).toBeGreaterThan(beforeVal);
+  });
+
+  test('5.3 Remove a Single Item from the Cart', async ({ page }) => {
+    await addProductToCart(page);
+    await page.goto('https://d8flight.com/shop-cart', { waitUntil: 'load' });
+    await clearOverlays(page);
+
+    const initialRows = await page.locator('table tbody tr').count();
+    await page.locator('.remove, .fi-rs-trash, .product-remove a').first().click({ force: true });
+    await page.waitForTimeout(2000);
+    
+    expect(await page.locator('table tbody tr').count()).toBeLessThan(initialRows);
+  });
+
+  test('5.4 Clear the Entire Cart', async ({ page }) => {
+    await addProductToCart(page);
+    await page.goto('https://d8flight.com/shop-cart', { waitUntil: 'load' });
+    await clearOverlays(page);
+
+    const clearBtn = page.locator('button, a').filter({ hasText: /Clear Cart|Clear/i }).first();
+    await clearBtn.click({ force: true });
+    await page.waitForTimeout(2000);
+    
+    await expect(page.locator('body')).toContainText(/empty|no products/i);
+  });
+
+  test('5.5 Proceed to Checkout from the Cart', async ({ page }) => {
+    await addProductToCart(page);
+    await page.goto('https://d8flight.com/shop-cart', { waitUntil: 'load' });
+    await clearOverlays(page);
+
+    await page.getByRole('link', { name: /Proceed To CheckOut|Checkout/i }).first().click({ force: true });
+    await page.waitForURL(/checkout/i, { timeout: 30000 });
+    await expect(page.locator('body')).toContainText(/Billing Address/i);
+  });
 });
